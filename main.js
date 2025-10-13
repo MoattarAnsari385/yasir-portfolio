@@ -148,7 +148,27 @@ class PortfolioApp {
 
         if (!this.mobileToggle || !this.navMenu) return;
 
-        this.mobileToggle.addEventListener('click', this.toggleMobileMenu.bind(this));
+        // Primary click handler
+        this.mobileToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggleMobileMenu();
+        });
+
+        // Keyboard accessibility
+        this.mobileToggle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.toggleMobileMenu();
+            }
+        });
+
+        // Fallback delegation if inner icon captures clicks
+        this.mobileToggle.addEventListener('pointerdown', (e) => {
+            if (e.target !== this.mobileToggle && this.mobileToggle.contains(e.target)) {
+                e.preventDefault();
+                this.toggleMobileMenu();
+            }
+        });
 
         // Close menu when clicking on nav links
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -159,21 +179,35 @@ class PortfolioApp {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.closeMobileMenu();
         });
+
+        // Ensure menu/scroll state resets on larger screens
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1280) {
+                this.closeMobileMenu();
+            }
+        });
     }
 
     toggleMobileMenu() {
-        this.navMenu.classList.toggle('active');
+        const isActive = this.navMenu.classList.toggle('active');
+        document.body.classList.toggle('nav-open', isActive);
+        if (this.mobileToggle) this.mobileToggle.classList.toggle('active', isActive);
         const icon = this.mobileToggle.querySelector('i');
         if (icon) {
-            icon.classList.toggle('fa-bars');
-            icon.classList.toggle('fa-times');
+            icon.classList.toggle('fa-bars', !isActive);
+            icon.classList.toggle('fa-times', isActive);
         }
+        // ARIA sync
+        if (this.mobileToggle) this.mobileToggle.setAttribute('aria-expanded', String(isActive));
     }
 
     closeMobileMenu() {
         if (this.navMenu) {
             this.navMenu.classList.remove('active');
         }
+        document.body.classList.remove('nav-open');
+        if (this.mobileToggle) this.mobileToggle.classList.remove('active');
+        if (this.mobileToggle) this.mobileToggle.setAttribute('aria-expanded', 'false');
         const icon = this.mobileToggle?.querySelector('i');
         if (icon) {
             icon.classList.add('fa-bars');
